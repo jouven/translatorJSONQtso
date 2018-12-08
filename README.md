@@ -3,7 +3,11 @@ Simple? translation library using json files as storage. Allows translation chai
 
 Compilation
 -----------
-Requires Qt library.
+Requires:
+
+Qt library
+
+https://github.com/jouven/comuso
 
 Run (in translatorJSONQtso source directory or pointing to it):
 

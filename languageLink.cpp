@@ -6,7 +6,6 @@
 #include <QDebug>
 #endif
 
-
 languageLink_c::languageLink_c(
         const QString& fromLanguage_pri_con
         , const QString& toLanguage_par_con

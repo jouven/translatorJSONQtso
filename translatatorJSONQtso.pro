@@ -56,9 +56,7 @@ CONFIG(debug, debug|release){
 }
 
 if (android){
-LIBS += -L$${MYPATH}home/jouven/Android/openssl/lib
-INCLUDEPATH += $${MYPATH}home/jouven/Android/openssl/include
-#crear noves carpetes
+#release
 CONFIG(release, debug|release){
     LIBS += -L$${MYPATH}home/jouven/mylibsAndroid/release/
     DEPENDPATH += $${MYPATH}home/jouven/mylibsAndroid/release
@@ -80,14 +78,11 @@ LIBS += -lbaseClassQtso
 QMAKE_CXXFLAGS_DEBUG -= -g
 QMAKE_CXXFLAGS_DEBUG += -pedantic -Wall -Wextra -g3
 
+linux:QMAKE_LFLAGS += -fuse-ld=gold
+QMAKE_LFLAGS_RELEASE += -fvisibility=hidden
 #if not win32, add flto, mingw (on msys2) can't handle lto
 linux:QMAKE_CXXFLAGS_RELEASE += -flto=jobserver
 !android:QMAKE_CXXFLAGS_RELEASE += -mtune=sandybridge
 
-#for -flto=jobserver in the link step to work with -j4
+#for -flto=jobserver in the link step to work with -jX
 linux:!android:QMAKE_LINK = +g++
-
-linux:QMAKE_LFLAGS += -fuse-ld=gold
-QMAKE_LFLAGS_RELEASE += -fvisibility=hidden
-#if not win32, add flto, mingw (on msys2) can't handle lto
-linux:QMAKE_LFLAGS_RELEASE += -flto=jobserver

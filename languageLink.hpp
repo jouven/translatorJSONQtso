@@ -1,5 +1,7 @@
-#ifndef TRANSLATEJSONQT_LANGUAGE_HPP
-#define TRANSLATEJSONQT_LANGUAGE_HPP
+#ifndef TRANSLATATORJSONQTSO_LANGUAGE_HPP
+#define TRANSLATATORJSONQTSO_LANGUAGE_HPP
+
+#include "crossPlatformMacros.hpp"
 
 #include <QString>
 #include <QHash>
@@ -8,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-class languageLink_c
+class EXPIMP_TRANSLATORJSONQTSO languageLink_c
 {
 
     //"hardcoded"
@@ -50,5 +52,5 @@ public:
     QString toLanguage_f() const;
 };
 
-#endif // TRANSLATEJSONQT_LANGUAGE_HPP
+#endif // TRANSLATATORJSONQTSO_LANGUAGE_HPP
 

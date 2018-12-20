@@ -1,10 +1,12 @@
 
-#ifndef TRANSLATEJSONQT_TRANSLATOR_HPP
-#define TRANSLATEJSONQT_TRANSLATOR_HPP
+#ifndef TRANSLATORJSONQTSO_TRANSLATOR_HPP
+#define TRANSLATORJSONQTSO_TRANSLATOR_HPP
 
 #include "languageLink.hpp"
 
 #include "baseClassQtso/baseClassQt.hpp"
+
+#include "crossPlatformMacros.hpp"
 
 #include <QString>
 #include <QJsonObject>
@@ -15,7 +17,7 @@
 #include <QHash>
 
 
-class translator_c : public eines::baseClassQt_c
+class EXPIMP_TRANSLATORJSONQTSO translator_c : public eines::baseClassQt_c
 {
     //won't use a hash here with the languageString i.e. eng esp fra... just do a manual check each time
     //there aren't that many languages anyway
@@ -181,4 +183,4 @@ public:
     void setPrependNotFoundValue_f(const QString& prependNotFoundValue_par_con);
 };
 
-#endif // TRANSLATEJSONQT_TRANSLATOR_HPP
+#endif // TRANSLATORJSONQTSO_TRANSLATOR_HPP

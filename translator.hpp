@@ -17,7 +17,7 @@
 #include <QHash>
 
 
-class EXPIMP_TRANSLATORJSONQTSO translator_c : public eines::baseClassQt_c
+class EXPIMP_TRANSLATORJSONQTSO translator_c : public baseClassQt_c
 {
     //won't use a hash here with the languageString i.e. eng esp fra... just do a manual check each time
     //there aren't that many languages anyway
@@ -177,6 +177,11 @@ public:
     std::vector<std::pair<QString, QString>> translationFromToPairs_f() const;
 
     bool addNotFoundKeys_f() const;
+    //if true, when translating if a key doesn't exists it's automatically inserted
+    //in the first "from language"-"to language" pair/"first language" (language chains will be ignored),
+    //the translate function will return a "translation" = prependNotFoundValue_f + key
+    //the found arg will return true
+    //this setting is to help add hardcoded keys to a language
     void setAddNotFoundKeys_f(const bool addNotFoundKeys_par_con);
 
     QString prependNotFoundValue_f() const;

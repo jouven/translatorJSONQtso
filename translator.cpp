@@ -572,6 +572,7 @@ QMap<QString, QString> translator_c::translate_f(QSet<QString>& keys_par)
                         if (addNotFoundKeys_pri)
                         {
                             languageLinkTmp_ptr->addUpdatePair_f(key_ite_con, prependNotFoundValue_pri + key_ite_con);
+                            resultTmp.insert(key_ite_con, prependNotFoundValue_pri + key_ite_con);
                         }
                         break;
                     }
@@ -588,7 +589,7 @@ QMap<QString, QString> translator_c::translate_f(QSet<QString>& keys_par)
                 currentFromLanguageTmp = currentToLanguageTmp;
                 currentToLanguageTmp = translateToLanguageChain_pri.at(chainIndexTmp);
                 const languageLink_c* languageLinkTmp_ptr_con(findLanguageLink_f(currentFromLanguageTmp, currentToLanguageTmp));
-                if (languageLinkTmp_ptr_con != Q_NULLPTR)
+                if (languageLinkTmp_ptr_con not_eq nullptr)
                 {
                     valueTmp = languageLinkTmp_ptr_con->keyToValue_f(key_ite_con, std::addressof(valueFoundTmp));
                     if (not valueFoundTmp)
@@ -620,11 +621,11 @@ QString translator_c::translate_f(
 {
     QString resultTmp;
 
-    QSet<QString> oneEleVectrTmp;
-    oneEleVectrTmp.insert(key_par_con);
-    QMap<QString, QString> resultsTmp(translate_f(oneEleVectrTmp));
+    QSet<QString> oneEleVectorTmp;
+    oneEleVectorTmp.insert(key_par_con);
+    QMap<QString, QString> resultsTmp(translate_f(oneEleVectorTmp));
     bool foundTmp(resultsTmp.size() > 0);
-    if (found_par_ptr not_eq Q_NULLPTR)
+    if (found_par_ptr not_eq nullptr)
     {
         *found_par_ptr = foundTmp;
     }

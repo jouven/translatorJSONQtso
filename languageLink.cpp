@@ -91,7 +91,7 @@ QString languageLink_c::keyToValue_f(
 {
     QString valueTmp;
     QHash<QString, QString>::const_iterator findResultTmp(keyValues_pri.find(key_par_con));
-    bool foundTmp(findResultTmp != keyValues_pri.constEnd());
+    bool foundTmp(findResultTmp not_eq keyValues_pri.constEnd());
     if (foundTmp)
     {
         valueTmp = findResultTmp.value();

@@ -10,14 +10,19 @@
 
 #include <QString>
 #include <QJsonObject>
-
-#include <vector>
 #include <QMap>
 #include <QSet>
-#include <QHash>
+//#include <QHash>
+#ifdef DEBUGJOUVEN
+#include <QDebug>
+#endif
 
+#include <vector>
 
-class EXPIMP_TRANSLATORJSONQTSO translator_c : public baseClassQt_c
+class textCompilation_c;
+class text_c;
+
+class EXPIMP_TRANSLATORJSONQTSO translator_c
 {
     //won't use a hash here with the languageString i.e. eng esp fra... just do a manual check each time
     //there aren't that many languages anyway
@@ -64,6 +69,8 @@ class EXPIMP_TRANSLATORJSONQTSO translator_c : public baseClassQt_c
     //2nd read the configuration, which need language loaded values
     void readConfigJSON_f(const QJsonObject& json_par_con);
 
+    //20191018 not in use because translate can't be const
+    //because it has the feature of adding non-existing keys
 //    const languageLink_c* findLanguageLink_f(
 //            const QString& fromLanguage_par_con
 //            , const QString& toLanguage_par_con
@@ -73,6 +80,8 @@ class EXPIMP_TRANSLATORJSONQTSO translator_c : public baseClassQt_c
             , const QString& toLanguage_par_con
     );
 
+    QString baseTranslate_f(const QString& key_par_con, bool* found_par);
+    QString configNotSetErrorMessage_f() const;
 public:
     //when initializing from JSON
     translator_c() = default;
@@ -101,6 +110,7 @@ public:
             const QString& languageFilePath_par_con
             , const QString& fromLanguage_par_con = QString()
             , const QString& toLanguage_par_con = QString()
+            , QString* errorStrPtr_par = nullptr
     );
 
     //will trigger readJSONLanguageFiles_f if it has "languageJSONFilePaths" field non empty
@@ -114,6 +124,8 @@ public:
     bool writeConfigJSONFile_f(
             const QString& filePath_par_con
             ,  const bool writeLanguagesToo_par_con = false
+            //error is appended if the ptr is not nullptr
+            , QString* errorStrPtr_par = nullptr
     );
 
     //won't replace existing one, use updateLanguageLink_f for that, returns true if successful
@@ -152,11 +164,35 @@ public:
             , const bool replaceSameKeyValue_par_con = false
     );
 
-    //empty key = ignored key
-    QMap<QString, QString> translate_f(QSet<QString>& keys_par);
-    //empty key = return empty string
-    QString translate_f(const QString& key_par_con, bool* found_par_ptr = Q_NULLPTR);
+    //for all the translate functions, when "AddNotFoundKeys" is true it will return a string even if not found is true
 
+    QString translate_f(const QString& key_par_con, bool* found_par = nullptr, QString* errorStrPtr_par = nullptr);
+    //won't translate already translated text_c object, but will always replace
+    QString translateAndReplace_f(const text_c& text_par_con, bool* found_par = nullptr, textCompilation_c* errorCompilationPtr_par = nullptr);
+
+    //empty key = ignored key
+    //return value explanation: key is the original value (the one from the set), value is the translation
+    //keys that don't get translated won't be in the returned object except if "AddNotFoundKeys" is true
+    QMap<QString, QString> translate_f(
+            const QSet<QString>& keys_par_con
+            , QString* errorStrPtr_par = nullptr
+    );
+    //key = text_c rawText, value = text translated and replaced
+    //like the single translation version function, it won't translate already translated text_c objects, but will always replace
+    //not translated keys won't be in the returned object, except if "AddNotFoundKeys" is true
+    //WARNING the above function uses a QSet but this one doesn't, duplicate "keys" will cause issues
+    QMap<QString, QString> translateAndReplace_f(
+            const textCompilation_c& textCompilation_par_con
+            //reports the same errors as translate, also
+            //if some replace didn't happen
+            , textCompilation_c* errorCompilationPtr_par = nullptr
+    );
+    QString translateAndReplaceToString_f(
+            const textCompilation_c& textCompilation_par_con
+            //reports the same errors as translate, also
+            //if some replace didn't happen
+            , textCompilation_c* errorCompilationPtr_par = nullptr
+    );
 
     bool languageLinksHasLanguageFrom_f(const QString& translateFromLanguage_par_con) const;
     QString translateFromLanguage_f() const;
@@ -187,5 +223,6 @@ public:
     QString prependNotFoundValue_f() const;
     void setPrependNotFoundValue_f(const QString& prependNotFoundValue_par_con);
 };
+
 
 #endif // TRANSLATORJSONQTSO_TRANSLATOR_HPP

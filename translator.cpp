@@ -1,14 +1,20 @@
 #include "translator.hpp"
 
+#include "textQtso/text.hpp"
+
+#include "essentialQtso/macros.hpp"
+
 #include "comuso/practicalTemplates.hpp"
 
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QMap>
 
 #ifdef DEBUGJOUVEN
 #include <QDebug>
 #endif
+
 
 std::vector<QString> translator_c::lastLoadedJSONFilePaths_f() const
 {
@@ -43,6 +49,7 @@ QString translator_c::translateFromLanguage_f() const
     return translateFromLanguage_pri;
 }
 
+//TODO add errorptr argument
 bool translator_c::setTranslateFromLanguage_f(const QString& translateFromLanguage_par_con)
 {
     bool resultTmp(false);
@@ -98,13 +105,13 @@ void translator_c::readLanguagesJSONFiles_f(
             }
         }
         languageJSONFilePaths_pri = successfulFilesTmp;
-
     }
 }
 
 bool translator_c::writeConfigJSONFile_f(
         const QString& filePath_par_con
-        , const bool writeLanguagesToo_par_con)
+        , const bool writeLanguagesToo_par_con
+        , QString* errorStrPtr_par)
 {
     bool configSavedTmp(false);
 
@@ -121,12 +128,14 @@ bool translator_c::writeConfigJSONFile_f(
     QFile configFileSaveTmp(filePath_par_con);
     if (configFileSaveTmp.open(QIODevice::WriteOnly))
     {
-        configFileSaveTmp.write(jsonByteArrayTmp);
-        configSavedTmp = true;
+        if (configFileSaveTmp.write(jsonByteArrayTmp) not_eq -1)
+        {
+            configSavedTmp = true;
+        }
     }
-    else
+    if (not configSavedTmp)
     {
-        appendError_f("Coudln't save JSON file (config)");
+        APPENDSTRPTR(errorStrPtr_par, "Couldn't save config JSON file");
     }
 
     return configSavedTmp;
@@ -135,7 +144,7 @@ bool translator_c::writeConfigJSONFile_f(
 bool translator_c::writeLanguagesJSONFile_f(
         const QString& languageFilePath_par_con
         , const QString& fromLanguage_par_con
-        , const QString& toLanguage_par_con)
+        , const QString& toLanguage_par_con, QString* errorStrPtr_par)
 {
     bool configSavedTmp(false);
 
@@ -153,7 +162,7 @@ bool translator_c::writeLanguagesJSONFile_f(
     }
     else
     {
-        appendError_f("Coudln't save JSON file (languages)");
+        APPENDSTRPTR(errorStrPtr_par, "Couldn't save languages JSON file");
     }
 
     return configSavedTmp;
@@ -320,7 +329,10 @@ void translator_c::readLanguageFileListJSON_f(const QJsonObject& json_par_con)
 void translator_c::readConfigJSON_f(const QJsonObject& json_par_con)
 {
     setTranslateFromLanguage_f(json_par_con["translateFromLanguage"].toString());
-    addNotFoundKeys_pri = json_par_con["addNotFoundKeys"].toBool(false);
+    if (json_par_con["addNotFoundKeys"].isBool())
+    {
+        addNotFoundKeys_pri = json_par_con["addNotFoundKeys"].toBool();
+    }
     prependNotFoundValue_pri = json_par_con["prependNotFoundValue"].toString("~");
 
     QJsonArray arrayTmp(json_par_con["translateToLanguageChain"].toArray());
@@ -345,7 +357,7 @@ void translator_c::readConfigJSON_f(const QJsonObject& json_par_con)
 //            return std::addressof(languageLink_ite_con);
 //        }
 //    }
-//    return Q_NULLPTR;
+//    return nullptr;
 //}
 
 languageLink_c* translator_c::findLanguageLink_f(
@@ -505,6 +517,7 @@ int_fast32_t translator_c::updateLanguageLink_f(
     languageLink_c* languageLinkDstTmp_ptr(findLanguageLink_f(languageLinkSrc_par_con.fromLanguage_f(), languageLinkSrc_par_con.toLanguage_f()));
     if (languageLinkDstTmp_ptr not_eq Q_NULLPTR)
     {
+        //ignore warning, keys is const
         for (const QString& keySource_ite_con : languageLinkSrc_par_con.keys_f())
         {
             bool foundDstTmp(false);
@@ -537,75 +550,162 @@ int_fast32_t translator_c::updateLanguageLink_f(
     return updateCountTmp;
 }
 
-QMap<QString, QString> translator_c::translate_f(QSet<QString>& keys_par)
+QString translator_c::baseTranslate_f(const QString& key_par_con, bool* found_par)
+{
+    QString resultTmp;
+    bool foundTmp(false);
+    while (true)
+    {
+        uint_fast32_t chainIndexTmp(0);
+        QString currentFromLanguageTmp(translateFromLanguage_pri);
+        QString currentToLanguageTmp(translateToLanguageChain_pri.at(chainIndexTmp));
+
+        {
+            languageLink_c* languageLinkTmp_ptr(findLanguageLink_f(currentFromLanguageTmp, currentToLanguageTmp));
+            if (languageLinkTmp_ptr not_eq nullptr)
+            {
+                resultTmp = languageLinkTmp_ptr->keyToValue_f(key_par_con, std::addressof(foundTmp));
+                if (not foundTmp)
+                {
+                    if (addNotFoundKeys_pri)
+                    {
+                        resultTmp = prependNotFoundValue_pri + key_par_con;
+                        languageLinkTmp_ptr->addUpdatePair_f(key_par_con, resultTmp);
+                    }
+                    break;
+                }
+            }
+            else
+            {
+                //no languagelink found for the from-to combination
+            }
+        }
+
+        chainIndexTmp = chainIndexTmp + 1;
+        while (chainIndexTmp < translateToLanguageChain_pri.size())
+        {
+            currentFromLanguageTmp = currentToLanguageTmp;
+            currentToLanguageTmp = translateToLanguageChain_pri.at(chainIndexTmp);
+            const languageLink_c* languageLinkTmp_ptr_con(findLanguageLink_f(currentFromLanguageTmp, currentToLanguageTmp));
+            if (languageLinkTmp_ptr_con not_eq nullptr)
+            {
+                resultTmp = languageLinkTmp_ptr_con->keyToValue_f(key_par_con, std::addressof(foundTmp));
+                if (not foundTmp)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                //this shouldn't happen since chain language should be in the languageLinks_pri
+            }
+
+            chainIndexTmp = chainIndexTmp + 1;
+        }
+        break;
+    }
+    if (found_par not_eq nullptr)
+    {
+        *found_par = foundTmp;
+    }
+    return resultTmp;
+}
+
+
+QString translator_c::configNotSetErrorMessage_f() const
+{
+    return "Translator configuration not set. TranslateFromLanguage and translateToLanguageChain must be set\n"
+           "and LanguageLinks must be set too except when addNotFoundKeys is true";
+}
+
+QString translator_c::translate_f(
+        const QString& key_par_con
+        , bool* found_par
+        , QString* errorStrPtr_par)
+{
+    QString resultTmp;
+    while (true)
+    {
+        if (not isConfigSet_f())
+        {
+            APPENDSTRPTR(errorStrPtr_par, configNotSetErrorMessage_f());
+            break;
+        }
+
+        resultTmp = baseTranslate_f(key_par_con, found_par);
+        break;
+    }
+    return resultTmp;
+}
+
+QString translator_c::translateAndReplace_f(
+        const text_c& text_par_con
+        , bool* found_par
+        , textCompilation_c* errorCompilationPtr_par)
+{
+    QString resultTmp;
+    while (true)
+    {
+        if (text_par_con.translated_f())
+        {
+            //already translated
+        }
+        else
+        {
+            QString translateErrorsTmp;
+            resultTmp = translate_f(text_par_con.rawText_f(), found_par, std::addressof(translateErrorsTmp));
+            if (translateErrorsTmp.isEmpty())
+            {
+                //no translate errors
+            }
+            else
+            {
+                errorCompilationPtr_par->append_f(translateErrorsTmp);
+            }
+#ifdef DEBUGJOUVEN
+            //qDebug() << "translate resultTmp1 " << resultTmp << endl;
+#endif
+        }
+        std::vector<size_t> failReplaceIndexesTmp;
+        resultTmp = text_par_con.rawReplace_f(std::addressof(resultTmp), errorCompilationPtr_par == nullptr ? nullptr : std::addressof(failReplaceIndexesTmp));
+#ifdef DEBUGJOUVEN
+        //qDebug() << "translate resultTmp2 " << resultTmp << endl;
+        //qDebug() << "text_par_con.rawReplace_f() " << text_par_con.rawReplace_f() << endl;
+#endif
+        if (errorCompilationPtr_par not_eq nullptr and not failReplaceIndexesTmp.empty())
+        {
+            errorCompilationPtr_par->append_f({"Translated text: \"{0}\" failed to replace indexes: ", resultTmp});
+            QString errorStrTmp;
+            for (const size_t failedIndex_ite_con : failReplaceIndexesTmp)
+            {
+                errorStrTmp.append(QString::number(failedIndex_ite_con) + ",");
+            }
+            //remove the last comma
+            errorStrTmp.chop(1);
+            errorCompilationPtr_par->append_f(errorStrTmp);
+        }
+        break;
+    }
+    return resultTmp;
+}
+
+QMap<QString, QString> translator_c::translate_f(
+        const QSet<QString>& keys_par_con
+        , QString* errorStrPtr_par)
 {
     QMap<QString, QString> resultTmp;
     while (true)
     {
         if (not isConfigSet_f())
         {
-            appendError_f("Translator configuration not set. TranslateFromLanguage and translateToLanguageChain must be set\n"
-                          "and LanguageLinks must be set too except when addNotFoundKeys is true");
+            APPENDSTRPTR(errorStrPtr_par, configNotSetErrorMessage_f());
             break;
         }
-        if (keys_par.empty())
+        for (const QString& key_ite_con : keys_par_con)
         {
-            break;
-        }
-
-        for (const QString& key_ite_con : keys_par)
-        {
-            QString valueTmp;
             bool valueFoundTmp(false);
-
-            uint_fast32_t chainIndexTmp(0);
-            QString currentFromLanguageTmp(translateFromLanguage_pri);
-            QString currentToLanguageTmp(translateToLanguageChain_pri.at(chainIndexTmp));
-
-            {
-                languageLink_c* languageLinkTmp_ptr(findLanguageLink_f(currentFromLanguageTmp, currentToLanguageTmp));
-                if (languageLinkTmp_ptr not_eq nullptr)
-                {
-                    valueTmp = languageLinkTmp_ptr->keyToValue_f(key_ite_con, std::addressof(valueFoundTmp));
-                    if (not valueFoundTmp)
-                    {
-                        if (addNotFoundKeys_pri)
-                        {
-                            languageLinkTmp_ptr->addUpdatePair_f(key_ite_con, prependNotFoundValue_pri + key_ite_con);
-                            resultTmp.insert(key_ite_con, prependNotFoundValue_pri + key_ite_con);
-                        }
-                        break;
-                    }
-                }
-                else
-                {
-                    //no languagelink found for the from-to combination
-                }
-            }
-
-            chainIndexTmp = chainIndexTmp + 1;
-            while (chainIndexTmp < translateToLanguageChain_pri.size())
-            {
-                currentFromLanguageTmp = currentToLanguageTmp;
-                currentToLanguageTmp = translateToLanguageChain_pri.at(chainIndexTmp);
-                const languageLink_c* languageLinkTmp_ptr_con(findLanguageLink_f(currentFromLanguageTmp, currentToLanguageTmp));
-                if (languageLinkTmp_ptr_con not_eq nullptr)
-                {
-                    valueTmp = languageLinkTmp_ptr_con->keyToValue_f(key_ite_con, std::addressof(valueFoundTmp));
-                    if (not valueFoundTmp)
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    //this shouldn't happen since chain language should be in the languageLinks_pri
-                }
-
-                chainIndexTmp = chainIndexTmp + 1;
-            }
-
-            if (valueFoundTmp)
+            QString valueTmp(baseTranslate_f(key_ite_con, std::addressof(valueFoundTmp)));
+            if (valueFoundTmp or (addNotFoundKeys_pri and valueTmp.startsWith(prependNotFoundValue_pri)))
             {
                 resultTmp.insert(key_ite_con, valueTmp);
             }
@@ -615,27 +715,100 @@ QMap<QString, QString> translator_c::translate_f(QSet<QString>& keys_par)
     return resultTmp;
 }
 
-QString translator_c::translate_f(
-        const QString& key_par_con
-        , bool* found_par_ptr)
+QString translator_c::translateAndReplaceToString_f(const textCompilation_c& textCompilation_par_con, textCompilation_c* errorCompilationPtr_par)
 {
     QString resultTmp;
-
-    QSet<QString> oneEleVectorTmp;
-    oneEleVectorTmp.insert(key_par_con);
-    QMap<QString, QString> resultsTmp(translate_f(oneEleVectorTmp));
-    bool foundTmp(resultsTmp.size() > 0);
-    if (found_par_ptr not_eq nullptr)
+    for (size_t i = 0; i < textCompilation_par_con.size_f(); ++i)
     {
-        *found_par_ptr = foundTmp;
+        if (textCompilation_par_con.text_f(i).translated_f())
+        {
+            //already translated
+            resultTmp.append(textCompilation_par_con.text_f(i).rawReplace_f());
+        }
+        else
+        {
+            resultTmp.append(translateAndReplace_f(textCompilation_par_con.text_f(i), nullptr, errorCompilationPtr_par));
+        }
     }
-
-    if (foundTmp)
-    {
-        resultTmp = resultsTmp.first();
-    }
-
     return resultTmp;
+}
+
+QMap<QString, QString> translator_c::translateAndReplace_f(
+        const textCompilation_c& textCompilation_par_con
+        , textCompilation_c* errorCompilationPtr_par
+)
+{
+    QSet<QString> textsToTranslateTmp;
+    //get the strings into a set
+    for (size_t i = 0; i < textCompilation_par_con.size_f(); ++i)
+    {
+        if (textCompilation_par_con.text_f(i).translated_f())
+        {
+            //already translated
+        }
+        else
+        {
+            textsToTranslateTmp.insert(textCompilation_par_con.text_f(i).rawText_f());
+        }
+    }
+    //translate
+    QString translateErrorsTmp;
+    QMap<QString, QString> translationsTmp(translate_f(textsToTranslateTmp, std::addressof(translateErrorsTmp)));
+    if (translateErrorsTmp.isEmpty())
+    {
+        //no translate errors
+    }
+    else
+    {
+        errorCompilationPtr_par->append_f(translateErrorsTmp);
+    }
+    //replace the wildcards in translated raw text with the values
+    for (size_t i = 0; i < textCompilation_par_con.size_f(); ++i)
+    {
+        QString translatedTextCopyTmp;
+        QString rawTextTmp;
+        const text_c textTmp(textCompilation_par_con.text_f(i));
+        if (textTmp.translated_f())
+        {
+            rawTextTmp = textTmp.rawText_f();
+            translatedTextCopyTmp = textTmp.rawText_f();
+        }
+        else
+        {
+            auto findResultTmp(translationsTmp.find(textTmp.rawText_f()));
+            if (findResultTmp not_eq translationsTmp.end())
+            {
+                rawTextTmp = textTmp.rawText_f();
+                translatedTextCopyTmp = findResultTmp.value();
+            }
+            else
+            {
+                //wasn't translated, won't be in the results
+                continue;
+            }
+        }
+
+        std::vector<size_t> failReplaceIndexesTmp;
+        //replace the translated value in the result with text_c::rawReplace_f version
+        translationsTmp.insert(
+                    rawTextTmp
+                    , textCompilation_par_con.text_f(i).rawReplace_f(std::addressof(translatedTextCopyTmp)
+                                                                     , errorCompilationPtr_par == nullptr ? nullptr : std::addressof(failReplaceIndexesTmp))
+        );
+        if (errorCompilationPtr_par not_eq nullptr and not failReplaceIndexesTmp.empty())
+        {
+            errorCompilationPtr_par->append_f({"Translated text: \"{0}\" failed to replace indexes: ", translatedTextCopyTmp});
+            QString errorStrTmp;
+            for (const size_t failedIndex_ite_con : failReplaceIndexesTmp)
+            {
+                errorStrTmp.append(QString::number(failedIndex_ite_con) + ",");
+            }
+            //remove the last comma
+            errorStrTmp.chop(1);
+            errorCompilationPtr_par->append_f(errorStrTmp);
+        }
+    }
+    return translationsTmp;
 }
 
 bool translator_c::languageLinksHasLanguageFrom_f(const QString& translateFromLanguage_par_con) const

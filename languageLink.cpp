@@ -21,7 +21,7 @@ void languageLink_c::write_f(QJsonObject& json) const
     json["toLanguage"] = toLanguage_pri;
     QJsonObject itemsJSONObjectTmp;
     QHash<QString, QString>::const_iterator iteTemp = keyValues_pri.constBegin();
-    while (iteTemp != keyValues_pri.constEnd())
+    while (iteTemp not_eq keyValues_pri.constEnd())
     {
         itemsJSONObjectTmp[iteTemp.key()] = iteTemp.value();
         ++iteTemp;
@@ -107,23 +107,9 @@ QString languageLink_c::keyToValue_f(
     return valueTmp;
 }
 
-std::vector<QString> languageLink_c::valueToKeys_f(const QString& value_par_con) const
+QList<QString> languageLink_c::valueToKeys_f(const QString& value_par_con) const
 {
-    std::vector<QString> resultTmp;
-    while (true)
-    {
-        QString keyTmp(keyValues_pri.key(value_par_con));
-        if (keyTmp.isEmpty())
-        {
-            break;
-        }
-        else
-        {
-            resultTmp.emplace_back(keyTmp);
-        }
-        //no need for break
-    }
-    return resultTmp;
+    return keyValues_pri.keys(value_par_con);
 }
 
 QList<QString> languageLink_c::keys_f() const

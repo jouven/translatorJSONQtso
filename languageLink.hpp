@@ -44,7 +44,7 @@ public:
     //non empty keys
     QString keyToValue_f(const QString& key_par_con, bool* found_par_ptr = Q_NULLPTR) const;
     //(slow?) since many keys can have the same values, this can return several keys
-    std::vector<QString> valueToKeys_f(const QString& value_par_con) const;
+    QList<QString> valueToKeys_f(const QString& value_par_con) const;
 
     QList<QString> keys_f() const;
 

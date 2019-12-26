@@ -660,7 +660,7 @@ QString translator_c::translateAndReplace_f(
             }
             else
             {
-                errorCompilationPtr_par->append_f(translateErrorsTmp);
+                APPENDTEXTPTR(errorCompilationPtr_par, translateErrorsTmp)
             }
 #ifdef DEBUGJOUVEN
             //qDebug() << "translate resultTmp1 " << resultTmp << endl;

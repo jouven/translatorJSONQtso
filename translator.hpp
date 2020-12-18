@@ -4,8 +4,6 @@
 
 #include "languageLink.hpp"
 
-#include "baseClassQtso/baseClassQt.hpp"
-
 #include "crossPlatformMacros.hpp"
 
 #include <QString>

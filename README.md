@@ -9,6 +9,10 @@ Qt library
 
 https://github.com/jouven/comuso
 
+https://github.com/jouven/textQtso
+
+https://github.com/jouven/essentialQtso
+
 Run (in translatorJSONQtso source directory or pointing to it):
 
     qmake

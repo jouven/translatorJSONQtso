@@ -1,7 +1,6 @@
 #message($$QMAKESPEC)
 QT -= gui
 
-TARGET = translatorJSONQtso
 TEMPLATE = lib
 
 !android:QMAKE_CXXFLAGS += -std=c++17

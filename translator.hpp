@@ -11,6 +11,7 @@
 #include <QMap>
 #include <QSet>
 //#include <QHash>
+#include <QObject>
 #ifdef DEBUGJOUVEN
 #include <QDebug>
 #endif
@@ -20,8 +21,9 @@
 class textCompilation_c;
 class text_c;
 
-class EXPIMP_TRANSLATORJSONQTSO translator_c
+class EXPIMP_TRANSLATORJSONQTSO translator_c : public QObject
 {
+    Q_OBJECT
     //won't use a hash here with the languageString i.e. eng esp fra... just do a manual check each time
     //there aren't that many languages anyway
     std::vector<languageLink_c> languageLinks_pri;
@@ -83,9 +85,6 @@ class EXPIMP_TRANSLATORJSONQTSO translator_c
 public:
     //when initializing from JSON
     translator_c() = default;
-    translator_c(
-            const QString& configFilePath_par_con
-    );
     //adds languageLinks (won't add duplicates)
     //then tries to set translateLanguageFrom and translateToLanguageChain
     translator_c(
@@ -167,6 +166,8 @@ public:
     QString translate_f(const QString& key_par_con, bool* found_par = nullptr, QString* errorStrPtr_par = nullptr);
     //won't translate already translated text_c object, but will always replace
     QString translateAndReplace_f(const text_c& text_par_con, bool* found_par = nullptr, textCompilation_c* errorCompilationPtr_par = nullptr);
+    //there is no translate_f function that returns a text_c because it's intentional, this is to prevent inserting translated logs in logsinJSONQtso
+    // library, logs are translated when fetched out not before
 
     //empty key = ignored key
     //return value explanation: key is the original value (the one from the set), value is the translation

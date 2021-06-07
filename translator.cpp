@@ -168,11 +168,6 @@ bool translator_c::writeLanguagesJSONFile_f(
     return configSavedTmp;
 }
 
-translator_c::translator_c(const QString& configFilePath_par_con)
-{
-    readConfigJSONFile_f(configFilePath_par_con);
-}
-
 translator_c::translator_c(
         const std::vector<languageLink_c>& languageLinks_par_con
         , const QString& translateFromLanguage_par_con

@@ -49,14 +49,14 @@ QString translator_c::translateFromLanguage_f() const
     return translateFromLanguage_pri;
 }
 
-//TODO add errorptr argument
-bool translator_c::setTranslateFromLanguage_f(const QString& translateFromLanguage_par_con)
+bool translator_c::setTranslateFromLanguage_f(const QString& translateFromLanguage_par_con, textCompilation_c* errorCompilationPtr_par)
 {
     bool resultTmp(false);
     while (true)
     {
         if (translateFromLanguage_par_con.isEmpty())
         {
+            APPENDTEXTPTR(errorCompilationPtr_par, "Translate from language empty");
             break;
         }
 
@@ -64,6 +64,11 @@ bool translator_c::setTranslateFromLanguage_f(const QString& translateFromLangua
         if (resultTmp)
         {
             translateFromLanguage_pri = translateFromLanguage_par_con;
+        }
+        else
+        {
+            text_c errorMessageTmp("No language link that can translate from this language {0}", translateFromLanguage_par_con);
+            APPENDTEXTPTR(errorCompilationPtr_par, errorMessageTmp);
         }
         break;
     }

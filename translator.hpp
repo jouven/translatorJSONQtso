@@ -196,7 +196,7 @@ public:
     bool languageLinksHasLanguageFrom_f(const QString& translateFromLanguage_par_con) const;
     QString translateFromLanguage_f() const;
     //returns true if the from language is loaded so it can be used to translate
-    bool setTranslateFromLanguage_f(const QString& translateFromLanguage_par_con);
+    bool setTranslateFromLanguage_f(const QString& translateFromLanguage_par_con, textCompilation_c *errorCompilationPtr_par = nullptr);
 
     std::vector<QString> translateToLanguageChain_f() const;
     //returns true if the chain can be done, if the required languages are loaded
